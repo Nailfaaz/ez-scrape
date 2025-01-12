@@ -169,3 +169,17 @@ We welcome contributions! Please follow these steps:
    git push origin feature-name
    ```
 5. Open a pull request.
+
+---
+
+## **Credits**
+
+This project was developed by:
+
+- **Muhammad Dafa Wisnu Galih**
+  - Email: [dafa.w.dev@gmail.com](mailto:dafa.w.dev@gmail.com)
+  - GitHub: [mdfwg](https://github.com/mdfwg)
+
+- **NailFaaz**
+  - Email: [nailfaaz2004@gmail.com](mailto:nailfaaz2004@gmail.com)
+  - GitHub: [Nailfaaz](https://github.com/Nailfaaz)
