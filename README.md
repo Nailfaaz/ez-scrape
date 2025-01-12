@@ -31,7 +31,7 @@ This is a powerful **Streamlit-based application** designed for managing scrapin
 ### 1. Clone the Repository
 First, clone the repository to your local machine:
 ```bash
-git clone https://github.com/your-repo-url.git
+git clone git remote add origin https://github.com/Nailfaaz/ez-scrape.git
 cd project_directory
 ```
 
@@ -169,18 +169,3 @@ We welcome contributions! Please follow these steps:
    git push origin feature-name
    ```
 5. Open a pull request.
-
----
-
-## **License**
-
-This project is licensed under the MIT License.
-
----
-
-## **Contact**
-
-For questions or support, please contact:
-
-- **Email**: your-email@example.com
-- **GitHub**: [Your GitHub Profile](https://github.com/your-profile)
