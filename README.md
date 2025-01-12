@@ -29,10 +29,14 @@ This is a powerful **Streamlit-based application** designed for managing scrapin
 ## **Installation**
 
 ### 1. Clone the Repository
-First, clone the repository to your local machine:
+First, clone the repository to your local computer folder:
 ```bash
-git clone git remote add origin https://github.com/Nailfaaz/ez-scrape.git
+git clone https://github.com/Nailfaaz/ez-scrape.git
 cd project_directory
+```
+or
+```bash
+git clone https://github.com/Nailfaaz/ez-scrape.git .
 ```
 
 ### 2. Set Up a Virtual Environment
@@ -60,7 +64,7 @@ pip install -r requirements.txt
 Start the Streamlit app:
 
 ```bash
-streamlit run app.py
+streamlit run main.py
 ```
 
 ---
@@ -162,6 +166,7 @@ We welcome contributions! Please follow these steps:
    ```
 3. Make your changes and commit:
    ```bash
+   git add .
    git commit -m "Add feature-name"
    ```
 4. Push your changes:
