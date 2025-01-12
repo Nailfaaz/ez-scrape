@@ -1,0 +1,13 @@
+# Ignore virtual environment
+.venv/
+.venv/*
+
+# Ignore contents of the "output" folder, but keep the folder itself
+output/*
+!output/.gitkeep
+
+# Ignore Python cache files and folders
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
