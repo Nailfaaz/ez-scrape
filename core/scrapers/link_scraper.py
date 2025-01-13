@@ -110,8 +110,49 @@ class LinkScraper:
                 break
             last_height = new_height
 
+    def _scroll_and_load_only(self, link_selector, footer_selector, max_scrolls=50, wait_time=3, max_repeats=3):
+        """
+        Scroll through the page and load more content by scrolling near the footer.
+        Stops when the same set of links is observed for a specified number of consecutive scrolls.
+        """
+        seen_links = set()
+        scroll_count = 0
+        repeat_count = 0
+
+        while scroll_count < max_scrolls:
+            try:
+                footer = self.driver.find_element(By.CSS_SELECTOR, footer_selector)
+                footer_location = footer.location['y']
+
+                scroll_position = footer_location - 200
+                self.driver.execute_script(f"window.scrollTo(0, {scroll_position});")
+                self._log(f"Scrolled to position {scroll_position}, above the footer.")
+            except Exception as e:
+                self._log(f"Footer not found or could not calculate position: {e}")
+                break
+
+            time.sleep(wait_time) 
+
+            links = self._extract_links(link_selector)
+            new_links = set(links) - seen_links  
+            if new_links:
+                seen_links.update(new_links) 
+                repeat_count = 0
+                self._log(f"Found {len(new_links)} new links, {len(seen_links)} total links.")
+            else:
+                repeat_count += 1
+                self._log(f"No new links found for {repeat_count} consecutive scrolls.")
+            self._save_links(new_links)
+
+            if repeat_count >= max_repeats:
+                self._log(f"Same links observed for {max_repeats} consecutive scrolls. Stopping scrolling.")
+                break
+            scroll_count += 1
+
+        self._log(f"Scrolling finished after {scroll_count} scrolls. Total links collected: {len(seen_links)}.")
+
     def scrape(self, base_url, link_selector, pagination_url=None, next_button_selector=None,
-               load_more_selector=None, custom_strategy=None, max_pages=5, progress_callback=None):
+               load_more_selector=None, have_load_more_button=None, custom_strategy=None, max_pages=5, progress_callback=None):
         """
         Perform the scraping using the specified strategy.
         """
@@ -149,7 +190,12 @@ class LinkScraper:
                 current_page += 1
 
             elif load_more_selector:
-                self._scroll_and_load(link_selector, load_more_selector)
+                if have_load_more_button:
+                    self._scroll_and_load(link_selector, load_more_selector)
+                    break
+                else:
+                    self._scroll_and_load_only(link_selector, load_more_selector)       
+                    break
 
             else:
                 break
@@ -168,7 +214,7 @@ class LinkScraper:
 
 
 def scrapelinksmain(project_folder, base_url, link_selector, pagination_url=None,
-                    next_button_selector=None, load_more_selector=None,
+                    next_button_selector=None, load_more_selector=None, have_load_more_button=None,
                     custom_strategy=None, max_pages=5):
     """
     Main function for scraping links with real-time logging and progress tracking.
@@ -191,8 +237,15 @@ def scrapelinksmain(project_folder, base_url, link_selector, pagination_url=None
 
     try:
         scraper.scrape(
-            base_url, link_selector, pagination_url, next_button_selector,
-            load_more_selector, custom_strategy, max_pages, progress_callback
+            base_url=base_url,
+            link_selector=link_selector,
+            pagination_url=pagination_url,
+            next_button_selector=next_button_selector,
+            load_more_selector=load_more_selector,
+            have_load_more_button=have_load_more_button,
+            custom_strategy=custom_strategy,
+            max_pages=max_pages,
+            progress_callback=progress_callback
         )
     except Exception as e:
         log_callback(f"Scraping failed: {e}")

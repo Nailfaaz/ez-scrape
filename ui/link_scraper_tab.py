@@ -40,7 +40,8 @@ def link_scraper_tab(output_root):
         max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=100, value=5)
 
     elif scraping_strategy == "Scroll/Load More":
-        load_more_selector = st.text_input("Load More Button Selector", placeholder="button.load-more")
+        have_load_more_button = True if st.selectbox("Have Load More Button?", ["Yes", "No"]) == "Yes" else False
+        load_more_selector = st.text_input("Load More Button (if Yes) / Footer Selector (if No)", placeholder="button.load-more")
 
     elif scraping_strategy == "Custom":
         st.warning("Custom strategy logic is not implemented yet.")
@@ -64,6 +65,7 @@ def link_scraper_tab(output_root):
                     pagination_url=pagination_url,
                     next_button_selector=next_button_selector,
                     load_more_selector=load_more_selector,
+                    have_load_more_button=have_load_more_button,
                     custom_strategy=custom_strategy,
                     max_pages=max_pages,
                 )
