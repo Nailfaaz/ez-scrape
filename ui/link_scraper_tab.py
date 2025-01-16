@@ -34,11 +34,11 @@ def link_scraper_tab(output_root):
             placeholder="https://example.com/page={page_number}",
             help="Use {page_number} as a placeholder for page numbers."
         )
-        max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=100, value=5)
+        max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=99999, value=5)
 
     elif scraping_strategy == "Next Button":
         next_button_selector = st.text_input("Next Button Selector", placeholder="button.next-page")
-        max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=100, value=5)
+        max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=99999, value=5)
 
     elif scraping_strategy == "Scroll/Load More":
         have_load_more_button = True if st.selectbox("Have Load More Button?", ["Yes", "No"]) == "Yes" else False
