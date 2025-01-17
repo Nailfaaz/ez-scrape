@@ -1,0 +1,3 @@
+- input link as list
+- max pages optional, defaultnya langsung sampe selesai
+- use case pagination tanpa template
