@@ -3,7 +3,6 @@ import pandas as pd
 import streamlit as st
 from core.scrapers.link_scraper import scrapelinksmain
 
-
 def link_scraper_tab(output_root):
     # Check if a project and subproject are selected
     if not (st.session_state.get("current_project") and st.session_state.get("current_subproject")):
@@ -17,23 +16,42 @@ def link_scraper_tab(output_root):
     )
 
     # Inputs for Scraping
-    base_url = st.text_input("Base URL", placeholder="https://example.com")
-    link_selector = st.text_input("Link Selector (CSS)", placeholder="a.link-class")
+    # base_url = st.text_input("Base URL", placeholder="https://example.com")
+    base_urls = st.text_input("Base URLs", placeholder="https://example.com, https://example2.com")
 
+    url_list = [url.strip() for url in base_urls.split(',') if url.strip()]
+
+    st.write("List of URLs:", url_list)
+    link_selectors = st.text_input(
+        "Link Selectors (CSS)",
+        placeholder="a.link-class, div.card a, h3.title a",
+        help="Enter multiple CSS selectors separated by commas."
+    )
+
+    # Split the input by commas and clean up whitespace
+    link_selector_list = [selector.strip() for selector in link_selectors.split(',') if selector.strip()]
+
+    st.write("List of CSS Link Selectors:", link_selector_list)
     pagination_url = None
     next_button_selector = None
     load_more_selector = None
     have_load_more_button = False
     custom_strategy = False
     max_pages = 5
+    multiple_links = st.selectbox("Enable Multiple Links", ["False", "True"]) == "True"  # Dropdown for enabling multiple links
 
     # Conditional Inputs Based on Strategy
     if scraping_strategy == "Pagination":
-        pagination_url = st.text_input(
-            "Pagination URL Template",
-            placeholder="https://example.com/page={page_number}",
-            help="Use {page_number} as a placeholder for page numbers."
+        pagination_urls = st.text_input(
+            "Pagination URL Templates",
+            placeholder="https://example.com/page={page_number}, https://example2.com/page={page_number}",
+            help="Use {page_number} as a placeholder for page numbers. Separate multiple URLs with commas."
         )
+
+        # Split the input by commas and remove extra spaces
+        pagination_url_list = [url.strip() for url in pagination_urls.split(',') if url.strip()]
+
+        st.write("List of Pagination URL Templates:", pagination_url_list)
         max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=99999, value=5)
 
     elif scraping_strategy == "Next Button":
@@ -61,14 +79,15 @@ def link_scraper_tab(output_root):
             try:
                 scrapelinksmain(
                     project_folder=links_folder,
-                    base_url=base_url,
-                    link_selector=link_selector,
-                    pagination_url=pagination_url,
+                    base_url=url_list,
+                    link_selector=link_selector_list,
+                    pagination_url=pagination_url_list,
                     next_button_selector=next_button_selector,
                     load_more_selector=load_more_selector,
                     have_load_more_button=have_load_more_button,
                     custom_strategy=custom_strategy,
                     max_pages=max_pages,
+                    multiple_links=multiple_links
                 )
                 st.success("Link Scraping Completed!")
 
