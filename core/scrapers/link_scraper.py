@@ -154,28 +154,32 @@ class LinkScraper:
         self._log(f"Scrolling finished after {scroll_count} scrolls. Total links collected: {len(seen_links)}.")
 
     def scrape(self, base_urls, link_selectors, pagination_url=None, next_button_selector=None,
-           load_more_selector=None, have_load_more_button=False, custom_strategy=None, 
-           max_pages=5, progress_callback=None, multiple_links=False):
+            load_more_selector=None, have_load_more_button=False, custom_strategy=None, 
+            max_pages=None, progress_callback=None, multiple_links=False):
         """
         Perform the scraping using the specified strategy.
         """
+        
+        # Ensure max_pages is a list and aligns with base_urls
+        if not isinstance(max_pages, list):
+            max_pages = [max_pages] * len(base_urls)
 
         # Prepare URL and selector pairs based on whether multiple links are involved
         if multiple_links:
             url_selector_pairs = []
             if pagination_url:
-                url_selector_pairs.extend(zip(base_urls, link_selectors, pagination_url))
+                url_selector_pairs.extend(zip(base_urls, link_selectors, pagination_url, max_pages))
             elif next_button_selector:
-                url_selector_pairs.extend(zip(base_urls, link_selectors, next_button_selector))
+                url_selector_pairs.extend(zip(base_urls, link_selectors, next_button_selector, max_pages))
             else:
                 # Fallback if no pagination or next button strategy is defined
-                url_selector_pairs.extend(zip(base_urls, link_selectors, ["Default"] * len(base_urls)))
+                url_selector_pairs.extend(zip(base_urls, link_selectors, ["Default"] * len(base_urls), max_pages))
         else:
-            url_selector_pairs = [(base_urls, link_selectors, "Default")]
+            url_selector_pairs = [(base_urls, link_selectors, "Default", max_pages[0])]
 
-        for current_url, link_selector, next_page in url_selector_pairs:
-            self.driver.get(current_url)
-            self._log(f"Starting scraping at {current_url}")
+        for current_url, link_selector, next_page, max_page_limit in url_selector_pairs:
+            self.driver.get(next_page.format(page_number=1))
+            self._log(f"Starting scraping at {next_page.format(page_number=1)}")
             current_page = 1
 
             while True:
@@ -193,10 +197,10 @@ class LinkScraper:
                 # Handle pagination strategies
                 if pagination_url:
                     try:
-                        if not multiple_links : 
-                            next_page=pagination_url
+                        if not multiple_links:
+                            next_page = pagination_url
                         next_url = next_page.format(page_number=current_page + 1)
-                        self._log(f"{next_url,next_page} anjay")
+                        self._log(f"Navigating to {next_url}")
                         self.driver.get(next_url)
                     except Exception as e:
                         self._log(f"Pagination ended: {e}")
@@ -223,14 +227,16 @@ class LinkScraper:
                     break
 
                 # Update page number and handle progress
-                
+                self._log(f"{max_page_limit}")
                 if progress_callback:
-                    progress_value = min(current_page / max_pages, 1.0)
-                    progress_callback(progress_value, f"Page {current_page} of {max_pages}")
+                    progress_value = min(int(current_page) / int(max_page_limit), 1.0)
+                    progress_callback(progress_value, f"Page {current_page} of {max_page_limit}")
+                    
 
-                if max_pages and current_page >= max_pages:
+                if int(max_page_limit) and current_page >= int(max_page_limit):
                     self._log("Reached maximum page limit.")
                     break
+
                 current_page += 1
 
 
