@@ -159,12 +159,11 @@ class LinkScraper:
         """
         Perform the scraping using the specified strategy.
         """
-        
+        print(base_urls)
         # Ensure max_pages is a list and aligns with base_urls
         if not isinstance(max_pages, list):
             max_pages = [max_pages] * len(base_urls)
 
-        # Prepare URL and selector pairs based on whether multiple links are involved
         if multiple_links:
             url_selector_pairs = []
             if pagination_url:
@@ -176,9 +175,13 @@ class LinkScraper:
                 url_selector_pairs.extend(zip(base_urls, link_selectors, ["Default"] * len(base_urls), max_pages))
         else:
             url_selector_pairs = [(base_urls, link_selectors, "Default", max_pages[0])]
+        print(url_selector_pairs)
 
         for current_url, link_selector, next_page, max_page_limit in url_selector_pairs:
-            self.driver.get(next_page.format(page_number=1))
+            if pagination_url :
+                self.driver.get(next_page.format(page_number=1))
+            else :
+                self.driver.get(current_url)
             self._log(f"Starting scraping at {next_page.format(page_number=1)}")
             current_page = 1
 
@@ -227,15 +230,17 @@ class LinkScraper:
                     break
 
                 # Update page number and handle progress
-                self._log(f"{max_page_limit}")
-                if progress_callback:
-                    progress_value = min(int(current_page) / int(max_page_limit), 1.0)
-                    progress_callback(progress_value, f"Page {current_page} of {max_page_limit}")
+                if pagination_url : 
+                    self._log(f"{max_page_limit}")
+                    if progress_callback:
+                        progress_value = min(int(current_page) / int(max_page_limit), 1.0)
+                        progress_callback(progress_value, f"Page {current_page} of {max_page_limit}")
+                        
                     
 
-                if int(max_page_limit) and current_page >= int(max_page_limit):
-                    self._log("Reached maximum page limit.")
-                    break
+                    if int(max_page_limit) and current_page >= int(max_page_limit):
+                        self._log("Reached maximum page limit.")
+                        break
 
                 current_page += 1
 
