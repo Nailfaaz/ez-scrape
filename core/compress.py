@@ -5,6 +5,7 @@ import shutil
 import logging
 import csv
 
+
 class FileCompressor:
     def __init__(self, project_folder, project_name, subproject_name):
         """

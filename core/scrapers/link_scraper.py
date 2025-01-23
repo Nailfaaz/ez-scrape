@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-
+from core.scrapers.crawl_4ai import Crawl4aiCrawler
 
 class LinkScraper:
     def __init__(self, project_folder, log_callback=None):
@@ -78,7 +78,7 @@ class LinkScraper:
             return
         try:
             existing_links = set(pd.read_csv(self.csv_path)["link"]) if os.path.exists(self.csv_path) else set()
-            new_links = links - existing_links
+            new_links = set(links) - existing_links
             if new_links:
                 pd.DataFrame(new_links, columns=["link"]).to_csv(
                     self.csv_path, mode="a", header=False, index=False
@@ -154,95 +154,96 @@ class LinkScraper:
         self._log(f"Scrolling finished after {scroll_count} scrolls. Total links collected: {len(seen_links)}.")
 
     def scrape(self, base_urls, link_selectors, pagination_url=None, next_button_selector=None,
-            load_more_selector=None, have_load_more_button=False, custom_strategy=None, 
-            max_pages=None, progress_callback=None, multiple_links=False):
+                load_more_selector=None, have_load_more_button=False, custom_strategy=None, 
+                max_pages=None, progress_callback=None, multiple_links=False, max_retries=2, max_session=5, memory_threshold=0.9):
         """
         Perform the scraping using the specified strategy.
         """
-        print(base_urls)
         # Ensure max_pages is a list and aligns with base_urls
         if not isinstance(max_pages, list):
             max_pages = [max_pages] * len(base_urls)
-
+        
+        url_selector_pairs = []
         if multiple_links:
-            url_selector_pairs = []
             if pagination_url:
                 url_selector_pairs.extend(zip(base_urls, link_selectors, pagination_url, max_pages))
             elif next_button_selector:
                 url_selector_pairs.extend(zip(base_urls, link_selectors, next_button_selector, max_pages))
             else:
-                # Fallback if no pagination or next button strategy is defined
-                url_selector_pairs.extend(zip(base_urls, link_selectors, ["Default"] * len(base_urls), max_pages))
+                # Default strategy if no pagination method is provided
+                url_selector_pairs.extend(zip(base_urls, link_selectors, [None] * len(base_urls), max_pages))
         else:
-            url_selector_pairs = [(base_urls, link_selectors, "Default", max_pages[0])]
-        print(url_selector_pairs)
-
+            url_selector_pairs = [(base_urls, link_selectors, pagination_url if pagination_url else None, max_pages[0])]
+        
         for current_url, link_selector, next_page, max_page_limit in url_selector_pairs:
-            if pagination_url :
-                self.driver.get(next_page.format(page_number=1))
-            else :
-                self.driver.get(current_url)
-            self._log(f"Starting scraping at {next_page.format(page_number=1)}")
-            current_page = 1
-
-            while True:
-                self._log(f"Processing page {current_page}")
-
-                if custom_strategy:
-                    self._log("Using custom strategy.")
-                    self._apply_custom_strategy(custom_strategy)
-                    break
-
-                # Extract and save links on the current page
-                links = self._extract_links(link_selector)
-                self._save_links(links)
-
-                # Handle pagination strategies
+            try:
+                self._log(f"Starting scraping at {current_url}")
+                
                 if pagination_url:
-                    try:
-                        if not multiple_links:
-                            next_page = pagination_url
-                        next_url = next_page.format(page_number=current_page + 1)
-                        self._log(f"Navigating to {next_url}")
-                        self.driver.get(next_url)
-                    except Exception as e:
-                        self._log(f"Pagination ended: {e}")
-                        break
+                    crawler = Crawl4aiCrawler(max_retries, max_session, memory_threshold)
 
-                elif next_button_selector:
-                    try:
-                        next_button = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, next_page)))
-                        next_button.click()
-                    except (TimeoutException, NoSuchElementException):
-                        self._log("No more pages to navigate.")
-                        break
-
-                elif load_more_selector:
-                    # Handle the "load more" button strategy
-                    if have_load_more_button:
-                        self._scroll_and_load(link_selector, load_more_selector)
-                    else:
-                        self._scroll_and_load_only(link_selector, load_more_selector)
-                    break
-
+                    urls = [next_page.format(page_number=page) for page in range(1, max_page_limit + 1)]
+                    result = crawler.run_scrap(urls, link_selector)
+                    self._save_links(result)
                 else:
-                    self._log("No pagination strategy defined, ending scrape.")
-                    break
+                    current_page = 1
+                    while current_page <= max_page_limit:
+                        self._log(f"Processing page {current_page} of {max_page_limit}")
+                        
+                        if custom_strategy:
+                            self._log("Using custom strategy.")
+                            self._apply_custom_strategy(custom_strategy)
+                            break
+                        
+                        try:
+                            self._log(f"Scraping URL: {current_url}")
+                            crawler = Crawl4aiCrawler(max_retries, max_session, memory_threshold)
+                            result = crawler.run_scrap([current_url], link_selector)
+                            self._save_links(result)
+                        except Exception as e:
+                            self._log(f"Error occurred while scraping: {e}")
+                            break
+                        
+                        if next_button_selector:
+                            try:
+                                next_button = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, next_button_selector)))
+                                next_button.click()
+                                current_page += 1
+                            except (TimeoutException, NoSuchElementException):
+                                self._log("No more pages to navigate.")
+                                break
+                        elif load_more_selector:
+                            if have_load_more_button:
+                                self._scroll_and_load(link_selector, load_more_selector)
+                            else:
+                                self._scroll_and_load_only(link_selector, load_more_selector)
+                            break
+                        else:
+                            self._log("No pagination strategy defined, ending scrape.")
+                            break
 
-                # Update page number and handle progress
-                if pagination_url : 
-                    self._log(f"{max_page_limit}")
-                    if progress_callback:
-                        progress_value = min(int(current_page) / int(max_page_limit), 1.0)
-                        progress_callback(progress_value, f"Page {current_page} of {max_page_limit}")
+                        if progress_callback:
+                            progress_value = min(current_page / max_page_limit, 1.0)
+                            progress_callback(progress_value, f"Page {current_page} of {max_page_limit}")
+            except Exception as e:
+                self._log(f"Scraping process failed: {e}")
+
+
+            #     # Update page number and handle progress
+            #     if pagination_url : 
+            #         self._log(f"{max_page_limit}")
+            #         if progress_callback:
+            #             progress_value = min(int(current_page) / int(max_page_limit), 1.0)
+            #             progress_callback(progress_value, f"Page {current_page} of {max_page_limit}")
                         
                     
 
-                    if int(max_page_limit) and current_page >= int(max_page_limit):
-                        self._log("Reached maximum page limit.")
-                        break
+            #         if int(max_page_limit) and current_page >= int(max_page_limit):
+            #             self._log("Reached maximum page limit.")
+            #             break
 
-                current_page += 1
+            #     current_page += 1
+            # break
 
 
     def close(self):
@@ -254,7 +255,7 @@ class LinkScraper:
 
 def scrapelinksmain(project_folder, base_url, link_selector, pagination_url=None,
                     next_button_selector=None, load_more_selector=None, have_load_more_button=None,
-                    custom_strategy=None, max_pages=5,multiple_links=False):
+                    custom_strategy=None, max_pages=5,multiple_links=False,max_retries=2,max_session=5,max_memory=0.9):
     """
     Main function for scraping links with real-time logging and progress tracking.
     """
@@ -285,7 +286,10 @@ def scrapelinksmain(project_folder, base_url, link_selector, pagination_url=None
             custom_strategy=custom_strategy,
             max_pages=max_pages,
             progress_callback=progress_callback,
-            multiple_links=multiple_links
+            multiple_links=multiple_links,
+            max_retries=max_retries,
+            max_session=max_session,
+            memory_threshold=max_memory
         )
     except Exception as e:
         log_callback(f"Scraping failed: {e}")

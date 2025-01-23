@@ -16,7 +16,7 @@ def link_scraper_tab(output_root):
     )
     # Conditional Inputs Based on Strategy
     if scraping_strategy == "Pagination":
-        pagination_urls = st.text_area(
+        pagination_urls = st.text_input(
             "Pagination URL Templates",
             placeholder="https://example.com/page={page_number}, https://example2.com/page={page_number}",
             help="Use {page_number} as a placeholder for page numbers. Separate multiple URLs with commas."
@@ -29,7 +29,7 @@ def link_scraper_tab(output_root):
         # max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=99999, value=5)
     
     elif scraping_strategy == "Next Button":
-        next_button_selector = st.text_area("Next Button Selectors (Separate by Commas)", placeholder="button.next-page"
+        next_button_selector = st.text_input("Next Button Selectors (Separate by Commas)", placeholder="button.next-page"
         ,help="Fill with next selector css separated by comma"                     
                                             )
         # max_pages = st.number_input("Maximum Pages to Scrape", min_value=1, max_value=99999, value=5)
@@ -65,7 +65,44 @@ def link_scraper_tab(output_root):
             placeholder="3,4,5,6",
             help="Enter Max Pages separated by commas."
         )
-        max_pages_list = [page.strip() for page in max_pages.split(',') if page.strip()]
+        max_pages_list=[int(max_page) for max_page in max_pages.split(',') if max_pages.strip()]
+
+        # Default values
+        default_retries = "2"
+        default_session = "5"
+        default_memory = "0.9"
+
+        # User inputs with default values if left empty
+        max_retries = st.text_input(
+            "Max Retries", 
+            value=default_retries, 
+            placeholder="1,10,20,50,100", 
+            help="Enter Your Maximum Retries"
+        )
+
+        max_session = st.text_input(
+            "Max Session", 
+            value=default_session, 
+            placeholder="1,10,20,50,100", 
+            help="Enter Your Maximum Session"
+        )
+
+        max_memory = st.text_input(
+            "Memory Allocation", 
+            value=default_memory, 
+            placeholder="0.2,0.4,0.6,0.9", 
+            help="Enter Your Maximum Memory Allocation (0-1)"
+        )
+
+        # Convert inputs to appropriate data types
+        max_retries = int(max_retries) if max_retries.isdigit() else int(default_retries)
+        max_session = int(max_session) if max_session.isdigit() else int(default_session)
+        max_memory = float(max_memory) if max_memory.replace('.', '', 1).isdigit() else float(default_memory)
+
+        # st.write(f"Max Retries: {max_retries}")
+        # st.write(f"Max Session: {max_session}")
+        # st.write(f"Memory Allocation: {max_memory}")
+
 
 
     pagination_url = None
@@ -89,22 +126,22 @@ def link_scraper_tab(output_root):
 
         with st.spinner("Scraping Links..."):
             try:
-                print("running")
                 scrapelinksmain(
                     project_folder=links_folder,
                     base_url = url_list if scraping_strategy != "Pagination" else ["WWW.Gadang.com"] * len(link_selectors),
                     link_selector=link_selector_list,
                     pagination_url=pagination_url_list if scraping_strategy == "Pagination" else None,
-                    next_button_selector=next_button_selector_list,
+                    next_button_selector=next_button_selector_list if scraping_strategy=='Next Button' else None,
                     load_more_selector=load_more_selector,
                     have_load_more_button=have_load_more_button,
                     custom_strategy=custom_strategy,
-                    max_pages=max_pages_list if scraping_strategy != "Next Button" else 0,
-                    multiple_links=multiple_links
+                    max_pages=max_pages_list if scraping_strategy == "Pagination" else 0,
+                    multiple_links=multiple_links,
+                    max_retries=max_memory,
+                    max_session=max_session,
+                    max_memory=max_memory
                 )
-                print("run")
                 st.success("Link Scraping Completed!")
-
                 # Display Scraped Links
                 links_csv = os.path.join(links_folder, "links.csv")
                 if os.path.exists(links_csv):
