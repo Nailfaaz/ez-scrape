@@ -134,7 +134,6 @@ class WarcScraper:
                             update_progress(idx, total_links, f"Processed {idx}/{total_links}: {url}")
 
 
-                        print(f"Saved WARC file for {url} at {warc_file_path}")
                 except Exception as e:
                     print(f"Failed to fetch {url}: {e}")
 

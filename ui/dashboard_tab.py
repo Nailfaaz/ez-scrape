@@ -14,7 +14,7 @@ def dashboard_tab(output_root):
     if project_data:
         project_df = pd.DataFrame(
             project_data,
-            columns=["Project", "Files Count", "Token Count", "Bytes Count"]
+            columns=["Project", "Files Count", "Token Count", "Project Size (Bytes)", "Project Compressed Size (Bytes)"]
         )
         st.dataframe(project_df, use_container_width=True)
     else:
@@ -26,7 +26,7 @@ def dashboard_tab(output_root):
     if subproject_data:
         subproject_df = pd.DataFrame(
             subproject_data,
-            columns=["Project", "Subproject", "Files Count", "Token Count", "Bytes Count"]
+            columns=["Project", "Subproject", "Files Count", "Token Count", "Folder Size (Bytes)", "Folder Compressed Size (Bytes)"]
         )
         st.dataframe(subproject_df, use_container_width=True)
     else:

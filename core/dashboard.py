@@ -33,6 +33,7 @@ def get_project_level_stats(output_root):
             total_files = 0
             total_tokens = 0
             total_bytes = 0
+            total_compressed=0
 
             for subproject in os.listdir(project_path):
                 subproject_path = os.path.join(project_path, subproject)
@@ -53,12 +54,21 @@ def get_project_level_stats(output_root):
                                 total_files += 1
                                 total_bytes += os.path.getsize(os.path.join(warc_folder, warc_file))
 
+                    data_compressed=os.path.join(subproject_path,"compressed")
+                    data_compressed=os.path.join(subproject_path,"compressed")
+                    if os.path.exists(data_compressed) and os.listdir(data_compressed):
+                        total_size_compressed = sum(
+                                os.path.getsize(os.path.join(data_compressed, file))
+                                for file in os.listdir(data_compressed)
+                                if (file.endswith(".zip") or file.endswith(".gz")) and os.path.isfile(os.path.join(data_compressed, file)) 
+                            )
+                        total_compressed+=total_size_compressed
                     # Tokens
                     tokens_csv_path = os.path.join(subproject_path, "tokens", "tokens.csv")
                     total_tokens += get_token_count_from_csv(tokens_csv_path)
 
             # Add a row summarizing the project
-            project_data.append([project, total_files, total_tokens, total_bytes])
+            project_data.append([project, total_files, total_tokens, total_bytes,total_compressed])
 
     return project_data
 
@@ -80,11 +90,14 @@ def get_subproject_level_stats(output_root):
 
                     # PDFs
                     pdf_folder = os.path.join(subproject_path, "pdfs", "scraped-pdfs")
+
                     if os.path.exists(pdf_folder):
                         for pdf_file in os.listdir(pdf_folder):
                             if pdf_file.endswith(".pdf"):
                                 total_files += 1
                                 total_bytes += os.path.getsize(os.path.join(pdf_folder, pdf_file))
+
+                    # Calculate Compressed Size
 
                     # WARCs
                     warc_folder = os.path.join(subproject_path, "warcs", "scraped-warcs")
@@ -94,11 +107,22 @@ def get_subproject_level_stats(output_root):
                                 total_files += 1
                                 total_bytes += os.path.getsize(os.path.join(warc_folder, warc_file))
 
+                    data_compressed=os.path.join(subproject_path,"compressed")
+                    if os.path.exists(data_compressed) and os.listdir(data_compressed):
+                        total_size_compressed = sum(
+                                os.path.getsize(os.path.join(data_compressed, file))
+                                for file in os.listdir(data_compressed)
+                                if (file.endswith(".zip") or file.endswith(".gz")) and os.path.isfile(os.path.join(data_compressed, file)) 
+                            )
+                    
                     # Tokens
                     tokens_csv_path = os.path.join(subproject_path, "tokens", "tokens.csv")
                     total_tokens += get_token_count_from_csv(tokens_csv_path)
 
                     # Add a row for the subproject
-                    subproject_data.append([project, subproject, total_files, total_tokens, total_bytes])
+                    subproject_data.append([project, subproject, total_files, total_tokens, total_bytes,total_size_compressed])
 
     return subproject_data
+
+
+
