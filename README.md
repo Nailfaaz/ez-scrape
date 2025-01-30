@@ -29,28 +29,30 @@ This is a powerful **Streamlit-based application** designed for managing scrapin
 ## **Installation**
 
 ### 1. Clone the Repository
-First, clone the repository to your local computer folder:
+First, create a local folder and clone the repository to your local computer folder:
+```bash
+git clone https://github.com/Nailfaaz/ez-scrape.git .
+```
+or
 ```bash
 git clone https://github.com/Nailfaaz/ez-scrape.git
 cd project_directory
 ```
-or
-```bash
-git clone https://github.com/Nailfaaz/ez-scrape.git .
-```
 
 ### 2. Set Up a Virtual Environment
 Create and activate a virtual environment to ensure dependency isolation:
-
 ```bash
 # Create a virtual environment
 python -m venv .venv
-
-# Activate the virtual environment
-# On Windows:
-.venv\Scripts\activate
-# On macOS/Linux:
+```
+And then activate the virtual environment
+On macOS/Linux:
+```bash
 source .venv/bin/activate
+```
+Or on Windows:
+```bash
+.venv\Scripts\activate
 ```
 
 ### 3. Install Dependencies
