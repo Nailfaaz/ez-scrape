@@ -1,18 +1,21 @@
 import os
 import csv
-import time
-import requests
 import socket
 from io import BytesIO
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 from warcio.warcwriter import WARCWriter
 from warcio.statusandheaders import StatusAndHeaders
 import logging
+from warcio.warcwriter import WARCWriter
+from warcio.statusandheaders import StatusAndHeaders
+from io import BytesIO
+import aiohttp
+import socket
+import os
+import asyncio
+import uuid
+from datetime import datetime
+import csv
+import time
 
 class WarcScraper:
     def __init__(self, project_folder, log_callback=None):
@@ -48,80 +51,6 @@ class WarcScraper:
         self.logger.info(message)
         self.log_callback(message)
 
-    def _setup_webdriver(self):
-        """
-        Set up Selenium WebDriver for scraping.
-        """
-        options = Options()
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--headless")
-        return webdriver.Chrome(options=options)
-
-    def save_website_to_warc(self, url, driver):
-        """
-        Save a website's content to a WARC file.
-        """
-        try:
-            self._log(f"Scraping URL: {url}")
-            driver.get(url)
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-            html = driver.page_source
-            response = requests.get(url, verify=False)
-            ip_address = socket.gethostbyname(url.split("/")[2])
-
-            sanitized_url = url.split("go.id/")[-1].replace(".html", "").replace("/", "_").replace(":", "_")
-            warc_file_path = os.path.join(self.warcs_folder, f"{sanitized_url}.warc")
-
-            with open(warc_file_path, "wb") as f:
-                writer = WARCWriter(filebuf=f, gzip=False)
-
-                # Request record
-                request_headers = [
-                    ("Host", url.split("/")[2]),
-                    ("User-Agent", driver.execute_script("return navigator.userAgent;")),
-                    ("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"),
-                ]
-                request_status_line = "GET / HTTP/1.1"
-                http_request_headers = StatusAndHeaders(request_status_line, request_headers, is_http_request=True)
-                request_payload = BytesIO()
-                request_record = writer.create_warc_record(url, "request", payload=request_payload, http_headers=http_request_headers)
-                request_record.rec_headers.add_header("WARC-IP-Address", ip_address)
-                writer.write_record(request_record)
-
-                # Response record
-                response_status_line = f"HTTP/1.1 {response.status_code} OK"
-                response_headers = [
-                    ("Content-Type", response.headers.get("Content-Type")),
-                    ("Server", response.headers.get("Server", "Unknown")),
-                ]
-                http_response_headers = StatusAndHeaders(response_status_line, response_headers)
-                response_payload = BytesIO(html.encode("utf-8"))
-                response_record = writer.create_warc_record(url, "response", payload=response_payload, http_headers=http_response_headers)
-                response_record.rec_headers.add_header("WARC-Concurrent-To", request_record.rec_headers.get_header("WARC-Record-ID"))
-                response_record.rec_headers.add_header("WARC-IP-Address", ip_address)
-                writer.write_record(response_record)
-
-            self._log(f"Saved WARC record for {url}")
-
-        except Exception as e:
-            self._log(f"Error scraping {url}: {e}")
-
-    def scrape_from_list(self, link_list, update_progress=None):
-        """
-        Scrape URLs from a list and save them as WARC files.
-        """
-        driver = self._setup_webdriver()
-        total_links = len(link_list)
-
-        for idx, url in enumerate(link_list, start=1):
-            self.save_website_to_warc(url, driver)
-            if update_progress:
-                update_progress(idx, total_links, f"Processed {idx}/{total_links}: {url}")
-
-        driver.quit()
-
     def scrape_csv(self, csv_path, update_progress=None):
         """
         Scrape URLs from a CSV file and save them as WARC files.
@@ -131,10 +60,82 @@ class WarcScraper:
                 reader = csv.reader(f)
                 next(reader)  # Skip the header
                 link_list = [row[0] for row in reader]
-
             self._log(f"Starting scraping for CSV: {csv_path}")
-            self.scrape_from_list(link_list, update_progress)
+            # self.scrape_from_list(link_list, update_progress)
+            asyncio.run(self.crawl_and_save_to_warc(link_list,self.warcs_folder,update_progress))
             self._log(f"Completed scraping for CSV: {csv_path}")
 
         except Exception as e:
             self._log(f"Error processing CSV {csv_path}: {e}")
+
+
+    async def crawl_and_save_to_warc(self,links, warc_folder,update_progress=None):
+        """
+        Crawl a list of links using crawl4ai and save the content as WARC files.
+        """
+        # Ensure the folder exists
+        os.makedirs(warc_folder, exist_ok=True)
+        total_links=len(links)
+        async with aiohttp.ClientSession() as session:
+            for idx,url in enumerate(links,start=1):
+                try:
+                    # Asynchronous GET request
+                    async with session.get(url, ssl=False) as response:
+                        response_text = await response.text()
+                        ip_address = socket.gethostbyname(url.split("/")[2])
+
+                        # Sanitize the URL for file naming
+                        sanitized_url = url.split("/")[-1].replace(".html", "").replace("/", "_").replace(":", "_")
+                        warc_file_path = os.path.join(warc_folder, f"{sanitized_url}.warc")
+
+                        with open(warc_file_path, "wb") as f:
+                            writer = WARCWriter(filebuf=f, gzip=False)
+
+                            # Request record
+                            request_headers = [
+                                ("Host", url.split("/")[2]),
+                                ("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36"),
+                                ("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"),
+                            ]
+                            request_status_line = "GET / HTTP/1.1"
+                            http_request_headers = StatusAndHeaders(request_status_line, request_headers, is_http_request=True)
+                            request_payload = BytesIO()
+                            request_record = writer.create_warc_record(url, "request", payload=request_payload, http_headers=http_request_headers)
+                            request_record.rec_headers.add_header("WARC-IP-Address", ip_address)
+                            writer.write_record(request_record)
+
+                            # Response record
+                            response_status_line = f"HTTP/1.1 {response.status} OK"
+                            response_headers = [
+                                ("Content-Type", response.headers.get("Content-Type")),
+                                ("Server", response.headers.get("Server", "Unknown")),
+                            ]
+                            http_response_headers = StatusAndHeaders(response_status_line, response_headers)
+                            response_payload = BytesIO(response_text.encode("utf-8"))
+                            response_record = writer.create_warc_record(url, "response", payload=response_payload, http_headers=http_response_headers)
+                            response_record.rec_headers.add_header("WARC-Concurrent-To", request_record.rec_headers.get_header("WARC-Record-ID"))
+                            response_record.rec_headers.add_header("WARC-IP-Address", ip_address)
+                            writer.write_record(response_record)
+
+                            # Metadata record
+                            timestamp = datetime.now().isoformat() + "Z"
+                            metadata_content = f"URL: {url}\nTimestamp: {timestamp}\nContent-Length: {len(response_text.encode('utf-8'))}\n"
+                            metadata_payload = BytesIO(metadata_content.encode("utf-8"))
+                            metadata_record = writer.create_warc_record(
+                                f"urn:uuid:{str(uuid.uuid4())}",
+                                "metadata",
+                                payload=metadata_payload,
+                                warc_content_type="application/warc-fields",
+                            )
+                            metadata_record.rec_headers.add_header("WARC-Concurrent-To", response_record.rec_headers.get_header("WARC-Record-ID"))
+                            metadata_record.rec_headers.add_header("WARC-IP-Address", ip_address)
+                            writer.write_record(metadata_record)
+                        if update_progress:
+                            update_progress(idx, total_links, f"Processed {idx}/{total_links}: {url}")
+
+
+                        print(f"Saved WARC file for {url} at {warc_file_path}")
+                except Exception as e:
+                    print(f"Failed to fetch {url}: {e}")
+
+

@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import streamlit as st
 from core.scrapers.warc_scraper import WarcScraper
-
+import time
 def warc_scraper_tab(output_root):
     st.header("WARC Scraper")
 
@@ -38,13 +38,21 @@ def warc_scraper_tab(output_root):
 
     def update_progress(current, total, message=""):
         progress_bar.progress(current / total, text=message)
+    def elapsed_time(start_time,end_time) :
+            elapsed_seconds = round(end_time, 2)
+            elapsed_minutes = round(end_time / 60, 2)
+            st.write(f"Elapsed time: {elapsed_seconds} seconds ({elapsed_minutes} minutes)")
+
 
     # Start scraping
     if st.button("Start WARC Scraping"):
         scraper = WarcScraper(subproject_folder, log_callback=lambda msg: log_placeholder.text(msg))
         with st.spinner("Scraping URLs..."):
             try:
+                start_time=time.time()
                 scraper.scrape_csv(links_csv_path, update_progress)
+                end_time=time.time()-start_time
+                elapsed_time(start_time,end_time)
                 st.success("WARC scraping completed!")
                 st.write(f"WARC files saved to: `{warcs_folder}`")
             except Exception as e:
