@@ -199,15 +199,6 @@ class LinkScraper:
                             self._apply_custom_strategy(custom_strategy)
                             break
                         
-                        # try:
-                        #     self._log(f"Scraping URL: {current_url}")
-                        #     crawler = Crawl4aiCrawler(max_retries, max_session, memory_threshold)
-                        #     result = crawler.run_scrap([current_url], link_selector)
-                        #     self._save_links(result)
-                        # except Exception as e:
-                        #     self._log(f"Error occurred while scraping: {e}")
-                        #     break
-                        
                         if next_button_selector:
                             try:
 
@@ -236,22 +227,7 @@ class LinkScraper:
                 self._log(f"Scraping process failed: {e}")
 
 
-            #     # Update page number and handle progress
-            #     if pagination_url : 
-            #         self._log(f"{max_page_limit}")
-            #         if progress_callback:
-            #             progress_value = min(int(current_page) / int(max_page_limit), 1.0)
-            #             progress_callback(progress_value, f"Page {current_page} of {max_page_limit}")
-                        
-                    
-
-            #         if int(max_page_limit) and current_page >= int(max_page_limit):
-            #             self._log("Reached maximum page limit.")
-            #             break
-
-            #     current_page += 1
-            # break
-
+   
 
     def close(self):
         """

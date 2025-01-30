@@ -99,9 +99,6 @@ def link_scraper_tab(output_root):
         max_session = int(max_session) if max_session.isdigit() else int(default_session)
         max_memory = float(max_memory) if max_memory.replace('.', '', 1).isdigit() else float(default_memory)
 
-        # st.write(f"Max Retries: {max_retries}")
-        # st.write(f"Max Session: {max_session}")
-        # st.write(f"Memory Allocation: {max_memory}")
 
 
 
