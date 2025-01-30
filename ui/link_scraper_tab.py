@@ -58,7 +58,9 @@ def link_scraper_tab(output_root):
     # Split the input by commas and clean up whitespace
     link_selector_list = [selector.strip() for selector in link_selectors.split(',') if selector.strip()]
     st.write("List of CSS Link Selectors:", link_selector_list)
-
+    default_retries = "2"
+    default_session = "5"
+    default_memory = "90"
     if scraping_strategy == "Pagination" :
         max_pages = st.text_input(
             "Enter Your Web Pages Limit (Separate By Commas)",
@@ -68,9 +70,7 @@ def link_scraper_tab(output_root):
         max_pages_list=[int(max_page) for max_page in max_pages.split(',') if max_pages.strip()]
 
         # Default values
-        default_retries = "2"
-        default_session = "5"
-        default_memory = "0.9"
+
 
         # User inputs with default values if left empty
         max_retries = st.text_input(
@@ -88,10 +88,10 @@ def link_scraper_tab(output_root):
         )
 
         max_memory = st.text_input(
-            "Memory Allocation", 
+            "Memory Allocation (%)", 
             value=default_memory, 
-            placeholder="0.2,0.4,0.6,0.9", 
-            help="Enter Your Maximum Memory Allocation (0-1)"
+            placeholder="60,80,90", 
+            help="Enter Your Maximum Memory Allocation (Recommended : 90)"
         )
 
         # Convert inputs to appropriate data types
@@ -111,7 +111,7 @@ def link_scraper_tab(output_root):
     have_load_more_button = False
     custom_strategy = False
     max_pages = 5
-    multiple_links = st.selectbox("Enable Multiple Links", ["False", "True"]) == "True"  # Dropdown for enabling multiple links
+    # multiple_links = st.selectbox("Enable Multiple Links", ["False", "True"]) == "True"  # Dropdown for enabling multiple links
 
 
 
@@ -135,11 +135,11 @@ def link_scraper_tab(output_root):
                     load_more_selector=load_more_selector,
                     have_load_more_button=have_load_more_button,
                     custom_strategy=custom_strategy,
-                    max_pages=max_pages_list if scraping_strategy == "Pagination" else 0,
-                    multiple_links=multiple_links,
-                    max_retries=max_memory,
-                    max_session=max_session,
-                    max_memory=max_memory
+                    max_pages=max_pages_list if scraping_strategy == "Pagination" else 10,
+                    multiple_links=True,
+                    max_retries=max_memory if scraping_strategy == "Pagination" else int(default_retries) ,
+                    max_session=max_session if scraping_strategy == "Pagination" else int(default_session),
+                    max_memory=max_memory if scraping_strategy == "Pagination" else int(default_memory)
                 )
                 st.success("Link Scraping Completed!")
                 # Display Scraped Links

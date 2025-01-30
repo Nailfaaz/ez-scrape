@@ -155,7 +155,7 @@ class LinkScraper:
 
     def scrape(self, base_urls, link_selectors, pagination_url=None, next_button_selector=None,
                 load_more_selector=None, have_load_more_button=False, custom_strategy=None, 
-                max_pages=None, progress_callback=None, multiple_links=False, max_retries=2, max_session=5, memory_threshold=0.9):
+                max_pages=None, progress_callback=None, multiple_links=True, max_retries=2, max_session=5, memory_threshold=0.9):
         """
         Perform the scraping using the specified strategy.
         """
@@ -177,16 +177,20 @@ class LinkScraper:
         
         for current_url, link_selector, next_page, max_page_limit in url_selector_pairs:
             try:
-                self._log(f"Starting scraping at {current_url}")
+                # self._log(f"Starting scraping at {current_url}")
                 
                 if pagination_url:
                     crawler = Crawl4aiCrawler(max_retries, max_session, memory_threshold)
 
                     urls = [next_page.format(page_number=page) for page in range(1, max_page_limit + 1)]
                     result = crawler.run_scrap(urls, link_selector)
+
                     self._save_links(result)
                 else:
+
                     current_page = 1
+                    self.driver.get(current_url)
+
                     while current_page <= max_page_limit:
                         self._log(f"Processing page {current_page} of {max_page_limit}")
                         
@@ -195,19 +199,22 @@ class LinkScraper:
                             self._apply_custom_strategy(custom_strategy)
                             break
                         
-                        try:
-                            self._log(f"Scraping URL: {current_url}")
-                            crawler = Crawl4aiCrawler(max_retries, max_session, memory_threshold)
-                            result = crawler.run_scrap([current_url], link_selector)
-                            self._save_links(result)
-                        except Exception as e:
-                            self._log(f"Error occurred while scraping: {e}")
-                            break
+                        # try:
+                        #     self._log(f"Scraping URL: {current_url}")
+                        #     crawler = Crawl4aiCrawler(max_retries, max_session, memory_threshold)
+                        #     result = crawler.run_scrap([current_url], link_selector)
+                        #     self._save_links(result)
+                        # except Exception as e:
+                        #     self._log(f"Error occurred while scraping: {e}")
+                        #     break
                         
                         if next_button_selector:
                             try:
-                                next_button = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, next_button_selector)))
+
+                                next_button = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, next_page)))
                                 next_button.click()
+                                links = self._extract_links(link_selector)
+                                self._save_links(links)
                                 current_page += 1
                             except (TimeoutException, NoSuchElementException):
                                 self._log("No more pages to navigate.")
