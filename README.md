@@ -42,7 +42,6 @@ cd project_directory
 ### 2. Set Up a Virtual Environment
 Create and activate a virtual environment to ensure dependency isolation:
 ```bash
-# Create a virtual environment
 python -m venv .venv
 ```
 And then activate the virtual environment
@@ -60,6 +59,11 @@ Install all required dependencies from the requirements.txt file:
 
 ```bash
 pip install -r requirements.txt
+```
+
+on Windows add:
+```bash
+playwright install
 ```
 
 ### 4. Run the Streamlit Application
