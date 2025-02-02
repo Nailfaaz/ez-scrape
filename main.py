@@ -10,6 +10,12 @@ from ui.compress_tab import compress_tab
 from ui.dashboard_tab import dashboard_tab
 from ui.custom_link_scraper_tab import custom_link_scraper_tab
 
+# Fix asyncio issue on Windows
+import sys
+import asyncio
+if sys.platform.startswith('win'):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 # Ensure output directory exists
 os.makedirs(OUTPUT_ROOT, exist_ok=True)
 
