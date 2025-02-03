@@ -13,10 +13,9 @@ def get_token_count_from_csv(tokens_csv_path):
                 reader = csv.reader(f)
                 next(reader, None)  # Skip the header safely
                 for row in reader:
-                    if row and row[0] != "TOTAL":  # Check for valid row and skip the "TOTAL" row
+                    if row and row[0] not in ["TOTAL (WARCs)", "TOTAL (PDFs)"]: 
                         total_tokens += int(row[1])
         except (StopIteration, ValueError) as e:
-            # Log or handle errors when reading the file
             print(f"Error reading tokens.csv at {tokens_csv_path}: {e}")
     return total_tokens
 
