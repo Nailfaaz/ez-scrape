@@ -79,13 +79,35 @@ class WarcScraper:
         async with aiohttp.ClientSession() as session:
             for idx,url in enumerate(links,start=1):
                 try:
-                    # Asynchronous GET request
-                    async with session.get(url, ssl=False) as response:
+                    # Asynchronous GET request with device-responsive headers
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+                        'Accept': '*/*',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-User': '?1',
+                        'Sec-Fetch-Dest': 'document',
+                        'Cache-Control': 'max-age=0',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Viewport-Width': '1024',
+                        'Device-Memory': '8',
+                        'DPR': '2.0',
+                        'Sec-CH-UA-Platform': '"macOS"',
+                        'Sec-CH-UA-Mobile': '?0',
+                        'Sec-CH-UA': '"Chromium";v="120", "Not(A:Brand";v="24"'
+                    }
+                    async with session.get(url, headers=headers, ssl=False, timeout=aiohttp.ClientTimeout(total=30)) as response:
                         response_text = await response.text()
                         ip_address = socket.gethostbyname(url.split("/")[2])
 
                         # Sanitize the URL for file naming
                         sanitized_url = url.split("/")[-1].replace(".html", "").replace("/", "_").replace(":", "_")
+                        if sanitized_url.strip() == "":
+                            sanitized_url = url.split("/")[-2].replace(".html", "").replace("/", "_").replace(":", "_")
                         warc_file_path = os.path.join(warc_folder, f"{sanitized_url}.warc")
 
                         with open(warc_file_path, "wb") as f:
