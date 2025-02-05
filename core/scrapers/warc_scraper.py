@@ -85,7 +85,7 @@ class WarcScraper:
                         ip_address = socket.gethostbyname(url.split("/")[2])
 
                         # Sanitize the URL for file naming
-                        sanitized_url = url.split("/")[-1].replace(".html", "").replace("/", "_").replace(":", "_")
+                        sanitized_url = url.removesuffix("/").split("/")[-1].replace(".html", "").replace("/", "_").replace(":", "_")
                         warc_file_path = os.path.join(warc_folder, f"{sanitized_url}.warc")
 
                         with open(warc_file_path, "wb") as f:
