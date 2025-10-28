@@ -197,6 +197,6 @@ This project was developed by:
 
 - **Krisna Bayu Dharma Putra**
   - Email: [Dharma.work.dev@gmail.com](mailto:dharma.work.dev@gmail.com)
-  - GitHub: [Dharma (Bayu) ](https://github.com/kbdp1305)
+  - GitHub: [Dharma (Bayu)](https://github.com/kbdp1305)
 
 
