@@ -194,3 +194,9 @@ This project was developed by:
 - **NailFaaz**
   - Email: [nailfaaz2004@gmail.com](mailto:nailfaaz2004@gmail.com)
   - GitHub: [Nailfaaz](https://github.com/Nailfaaz)
+
+- **Krisna Bayu Dharma Putra**
+  - Email: [Dharma.work.dev@gmail.com](mailto:dharma.work.dev@gmail.com)
+  - GitHub: [Nailfaaz](https://github.com/kbdp1305)
+
+
