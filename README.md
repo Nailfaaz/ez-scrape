@@ -4,6 +4,22 @@ This is a powerful **Streamlit-based application** designed for managing scrapin
 
 ---
 
+## **Context**
+
+Built in a team of three to speed up web-data collection for training an Indonesian LLM
+(Sahabat-AI). One app covers the whole loop for each source website:
+
+```
+Link Scraper ──► links.csv ──► PDF / WARC Scraper ──► Token Estimator ──► Compressor
+ (Selenium)                     (PyMuPDF / warcio)      (tokens per file)    (.zip / .warc.gz)
+```
+
+The link scraper handles the four pagination styles found on Indonesian news and government sites:
+**URL-template pagination**, **"Next" buttons**, **infinite scroll / "Load More"**, and a **custom**
+strategy for anything else.
+
+---
+
 ## **Features**
 
 - **Dynamic Project and Subproject Management**:
