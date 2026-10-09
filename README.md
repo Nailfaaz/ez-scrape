@@ -6,8 +6,7 @@ This is a powerful **Streamlit-based application** designed for managing scrapin
 
 ## **Context**
 
-Built in a team of three to speed up web-data collection for training an Indonesian LLM
-(Sahabat-AI). One app covers the whole loop for each source website:
+Built to speed up web-data collection for training an Indonesian LLM (Sahabat-AI). One app covers the whole loop for each source website:
 
 ```
 Link Scraper ──► links.csv ──► PDF / WARC Scraper ──► Token Estimator ──► Compressor
